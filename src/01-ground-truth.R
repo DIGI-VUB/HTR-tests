@@ -267,7 +267,9 @@ x <- subset(modeldata, dataset == "train")
 writeLines(sprintf("%s %s", x$doc_id, x$text), con = file.path("data", "imgs", "tr.txt"))
 x <- subset(modeldata, dataset == "validation")
 writeLines(sprintf("%s %s", x$doc_id, x$text), con = file.path("data", "imgs", "va.txt"))
-save(transcriptions, file = "transcriptions.RData")
+x <- subset(modeldata, dataset == "test")
+writeLines(sprintf("%s %s", x$doc_id, x$text), con = file.path("data", "imgs", "te.txt"))
+save(transcriptions, file = "data/transcriptions.RData")
 
 ## Also make images with fixed height: 128
 x <- list.files("data/imgs/textlines", full.names = TRUE)
@@ -278,6 +280,15 @@ x <- mapply(img = x, path = file.path("data/imgs/textlines_h128", basename(x)), 
 })
 image_read(x[1])
 
+
+ids <- readLines("issues.txt")
+ids <- gsub(ids, pattern = "(.+')(.+)('])", replacement = "\\2")
+ids <- subset(modeldata, doc_id %in% ids)
+cat(sprintf("%s %s", ids$doc_id, ids$text), sep = "\n")
+ids <- ids$doc_id
+img <- image_read((file.path("data/imgs/textlines", paste0(ids, ".jpg"))))
+image_info(img)
+image_append(img, TRUE) %>% image_write(path = "loss-warnings.png")
 # ## check
 # load("transcriptions.RData")
 # ids <- c('32505198-73', '32505199-31', '32500853-08', '32501271-05', '32505219-03', '32505217-04', '32505165-26', '32500973-14', '32500665-39', '32505171-19')
