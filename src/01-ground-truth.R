@@ -261,14 +261,15 @@ modeldata$text <- sapply(modeldata$text, FUN=function(x) paste(x, collapse = " "
 set.seed(123456789)
 setdiff(names(table(unlist(strsplit(modeldata$text, " ")))), allowed_chars)
 modeldata$traintest <- runif(nrow(modeldata))
-modeldata$dataset <- ifelse(modeldata$traintest > 0.95, "test", 
-                            ifelse(modeldata$traintest > 0.75, "validation", "train"))
+modeldata$dataset <- ifelse(modeldata$traintest > 0.95, "test", ifelse(modeldata$traintest > 0.75, "validation", "train"))
 x <- subset(modeldata, dataset == "train")
 writeLines(sprintf("%s %s", x$doc_id, x$text), con = file.path("data", "imgs", "tr.txt"))
 x <- subset(modeldata, dataset == "validation")
 writeLines(sprintf("%s %s", x$doc_id, x$text), con = file.path("data", "imgs", "va.txt"))
 x <- subset(modeldata, dataset == "test")
 writeLines(sprintf("%s %s", x$doc_id, x$text), con = file.path("data", "imgs", "te.txt"))
+x <- sapply(strsplit(readLines( file.path("data", "imgs", "te.txt")), " "), head, 1)
+writeLines(x[1:3], file.path("data", "imgs", "test.txt"))
 save(transcriptions, file = "data/transcriptions.RData")
 
 ## Also make images with fixed height: 128
@@ -276,6 +277,17 @@ x <- list.files("data/imgs/textlines", full.names = TRUE)
 x <- mapply(img = x, path = file.path("data/imgs/textlines_h128", basename(x)), FUN=function(img, path){
   img <- image_read(img)
   img <- image_resize(img, "x128")
+  image_write(img, path = path, format = "jpg", quality = 100)
+})
+image_read(x[1])
+
+## Also make images with fixed height: 128 and using su binarization
+library(image.binarization)
+x <- list.files("data/imgs/textlines", full.names = TRUE)
+x <- mapply(img = x, path = file.path("data/imgs/textlines_su_h128", basename(x)), FUN=function(img, path){
+  img <- image_read(img)
+  img <- image_resize(img, "x128")
+  img <- image_binarization(img, type = "su")
   image_write(img, path = path, format = "jpg", quality = 100)
 })
 image_read(x[1])
