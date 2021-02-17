@@ -118,11 +118,22 @@ image_append(areas_img, stack = TRUE)
 ##
 ########################################################################################
 f <- list.files("data/scans", full.names = TRUE)
-
+i <- 1
+for(i in 1:100){
+  print(sprintf("%s: %s %s", Sys.time(), i, f[[i]]))
+  img <- image_read(f[[i]])
+  img
+  img_binary <- image_binarization(img, type = "su", opts = list(window = 75L, minN = 75L))
+  areas <- image_textlines_astar(img_binary, morph = TRUE, step = 2, mfactor = 10, trace = TRUE)
+  print(areas$overview)
+}
 i <- 27
-img <- image_read(f[[i]])
-img
-img <- image_binarization(img, type = "su", opts = list(window = 75L, minN = 75L))
+
+plt <- image_draw(img)
+lapply(areas$baseline, FUN=function(path){
+  lines(x = path$x, y = path$y, col = "red", lwd = 5)  
+})
+dev.off()
 
 width  <- image_info(img)$width
 height <- image_info(img)$height

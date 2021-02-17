@@ -26,6 +26,14 @@ read_alto_xml <- function(path){
 }
 crop_textlines <- function(f, db, color = "royalblue"){
   img <- image_read(f)
+  ##
+  ## CONVERT TO DPI 70
+  ##
+  img <- image_write(img, density = "70x70")
+  img <- image_read(img)
+  ##
+  ##
+  ##
   txtlines  <- db
   areas_img <- lapply(seq_len(nrow(txtlines)), FUN=function(i){
     location <- txtlines[i, ]
@@ -54,10 +62,11 @@ remove_comments <- function(x){
 ##################################################################################
 ## Read Alto XML files
 ##
-files <- data.frame(path = list.files("data/transkribus-lines/Corpus_19de_eeuw/alto/", full.names = TRUE),
+files <- data.frame(path = list.files("data/transkribus-lines/HTR test corpus/alto_exports/", full.names = TRUE),
                     stringsAsFactors = FALSE)
 files$image <- sprintf("%s.jpg", file_path_sans_ext(basename(files$path)))
-files$path_image <- file.path("data/transkribus-lines/Corpus_19de_eeuw", files$image)
+files$path_image <- file.path("data/transkribus-lines/HTR test corpus/text_en_foto_dpi70", files$image)
+path <- "C:/Users/Jan/Desktop/RABrugge_TBO119_712_293a.xml"
 
 textlines <- lapply(files$path, read_alto_xml)
 textlines <- setNames(textlines, files$path_image)
@@ -81,13 +90,6 @@ image_rbind(do.call(c, img$areas))
 ##################################################################################
 ## Build training set
 ##
-dir.create(file.path("data", "transkribus-lines", "Corpus_19de_eeuw", "imgs"), recursive = TRUE)
-dir.create(file.path("data", "transkribus-lines", "Corpus_19de_eeuw", "imgs", "overview"), recursive = TRUE)
-dir.create(file.path("data", "transkribus-lines", "Corpus_19de_eeuw", "imgs", "textlines"), recursive = TRUE)
-dir.create(file.path("data", "transkribus-lines", "Corpus_19de_eeuw", "imgs", "textlines_h128"), recursive = TRUE)
-dir.create(file.path("data", "transkribus-lines", "Corpus_19de_eeuw", "imgs", "textlines_su_h128"), recursive = TRUE)
-
-
 transcriptions <- list()
 
 paths <- unique(textlines$path_image)
@@ -105,7 +107,7 @@ for(i in seq_along(paths)){
   })
   combined <- image_rbind(do.call(c, combined))
   
-  path <- file.path("data", "transkribus-lines", "Corpus_19de_eeuw", "imgs", "overview", sprintf("%s.png", subject_id))
+  path <- file.path("data", "transkribus-lines", "HTR test corpus", "imgs-dpi70", "overview", sprintf("%s.png", subject_id))
   image_write(matches$overview, path = path, format = "png")
   
   matches$text <- remove_comments(matches$text)  
@@ -119,12 +121,13 @@ for(i in seq_along(paths)){
   transcriptions[[i]] <- traindata
   for(j in seq_len(nrow(traindata))){
     path <- traindata$doc_id[j]
-    path <- file.path("data", "transkribus-lines", "Corpus_19de_eeuw", "imgs", "textlines", sprintf("%s.jpg", path))
+    path <- file.path("data", "transkribus-lines", "HTR test corpus", "imgs-dpi70", "textlines", sprintf("%s.jpg", path))
     image_write(matches$areas[[j]], path = path, format = "jpeg", quality = 100)
   }
   gc()
 }
-save(transcriptions, file = "data/transkribus-lines/Corpus_19de_eeuw/transcriptions.RData")
+
+
 
 allowed_chars <- c("-", ",", ";", ":", "!", "?", "/", ".", "'", "\"", "(", ")", 
                    "@", "*", "&", "#", "+", "0", "1", "2", "3", "4", "5", "6", "7", 
@@ -143,19 +146,18 @@ setdiff(names(table(unlist(strsplit(modeldata$text, " ")))), allowed_chars)
 modeldata$traintest <- runif(nrow(modeldata))
 modeldata$dataset <- ifelse(modeldata$traintest > 0.95, "test", ifelse(modeldata$traintest > 0.75, "validation", "train"))
 x <- subset(modeldata, dataset == "train")
-writeLines(sprintf("%s %s", x$doc_id, x$text), con = file.path("data", "transkribus-lines", "Corpus_19de_eeuw", "imgs", "tr.txt"))
+writeLines(sprintf("%s %s", x$doc_id, x$text), con = file.path("data", "transkribus-lines", "HTR test corpus", "imgs-dpi70", "tr.txt"))
 x <- subset(modeldata, dataset == "validation")
-writeLines(sprintf("%s %s", x$doc_id, x$text), con = file.path("data", "transkribus-lines", "Corpus_19de_eeuw", "imgs", "va.txt"))
+writeLines(sprintf("%s %s", x$doc_id, x$text), con = file.path("data", "transkribus-lines", "HTR test corpus", "imgs-dpi70", "va.txt"))
 x <- subset(modeldata, dataset == "test")
-writeLines(sprintf("%s %s", x$doc_id, x$text), con = file.path("data", "transkribus-lines", "Corpus_19de_eeuw", "imgs", "te.txt"))
-x <- sapply(strsplit(readLines( file.path("data", "transkribus-lines", "Corpus_19de_eeuw", "imgs", "te.txt")), " "), head, 1)
-writeLines(x[1:3], file.path("data", "transkribus-lines", "Corpus_19de_eeuw", "imgs", "test.txt"))
-save(transcriptions, file = "data/transkribus-lines/Corpus_19de_eeuw/transcriptions.RData")
+writeLines(sprintf("%s %s", x$doc_id, x$text), con = file.path("data", "transkribus-lines", "HTR test corpus", "imgs-dpi70", "te.txt"))
+x <- sapply(strsplit(readLines( file.path("data", "transkribus-lines", "HTR test corpus", "imgs-dpi70", "te.txt")), " "), head, 1)
+writeLines(x[1:3], file.path("data", "transkribus-lines", "HTR test corpus", "imgs-dpi70", "test.txt"))
+#save(transcriptions, file = "data/transkribus-lines/HTR test corpus/transcriptions.RData")
 
 ## Also make images with fixed height: 128
-x <- list.files("data/transkribus-lines/Corpus_19de_eeuw/imgs/textlines", full.names = TRUE, pattern = ".jpg")
-x <- mapply(img = x, path = file.path("data/transkribus-lines/Corpus_19de_eeuw/imgs/textlines_h128", basename(x)), FUN=function(img, path){
-  cat(img, sep = "\n")
+x <- list.files("data/transkribus-lines/HTR test corpus/imgs-dpi70/textlines", full.names = TRUE)
+x <- mapply(img = x, path = file.path("data/transkribus-lines/HTR test corpus/imgs-dpi70/textlines_h128", basename(x)), FUN=function(img, path){
   img <- image_read(img)
   img <- image_resize(img, "x128")
   image_write(img, path = path, format = "jpg", quality = 100)
@@ -164,9 +166,8 @@ image_read(x[1])
 
 ## Also make images with fixed height: 128 and using su binarization
 library(image.binarization)
-x <- list.files("data/transkribus-lines/Corpus_19de_eeuw/imgs/textlines", full.names = TRUE, pattern = ".jpg")
-x <- mapply(img = x, path = file.path("data/transkribus-lines/Corpus_19de_eeuw/imgs/textlines_su_h128", basename(x)), FUN=function(img, path){
-  cat(img, sep = "\n")
+x <- list.files("data/transkribus-lines/HTR test corpus/imgs-dpi70/textlines", full.names = TRUE)
+x <- mapply(img = x, path = file.path("data/transkribus-lines/HTR test corpus/imgs-dpi70/textlines_su_h128", basename(x)), FUN=function(img, path){
   img <- image_read(img)
   img <- image_resize(img, "x128")
   img <- image_binarization(img, type = "su")
